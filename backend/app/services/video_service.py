@@ -1,7 +1,7 @@
 from pathlib import Path
 import re
 
-BASE_DIR = Path("/home/user2/문서/agentApp")
+BASE_DIR = Path("/home/dickson/문서/agentApp")
 
 # 리눅스에서는 파일이름에 : 가 들어가는게 가능하다고 한다 윈도우에서는 세션 파일 받을때 불가능해서 자동으로  : 를 _ 로 바꾼단다
 

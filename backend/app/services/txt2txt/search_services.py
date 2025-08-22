@@ -1,6 +1,6 @@
 import numpy as np
 from ...es.client import get_client
-from .query_embedder import embed_query
+from ..query_embedder import embed_query
 
 es = get_client()   
 
