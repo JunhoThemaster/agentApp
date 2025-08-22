@@ -1,3 +1,5 @@
 /venv/
 # 가상환경 폴더 무시
 venv/
+TRI_2gb_sessions/
+AUTOLab_2gb_sessions/

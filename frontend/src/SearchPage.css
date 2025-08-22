@@ -1,0 +1,72 @@
+.search-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px;
+  min-height: 100vh;
+  background-color: #f9fafb;
+}
+
+/* 검색 박스 */
+.search-box {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 40px;
+  width: 60%;
+  max-width: 700px;
+}
+
+.search-box input {
+  flex: 1;
+  padding: 14px 20px;
+  border: 2px solid #ddd;
+  border-radius: 9999px; /* 완전 둥글게 */
+  font-size: 16px;
+  outline: none;
+}
+
+.search-box button {
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.search-box button:hover {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+}
+
+/* 결과 2컬럼 */
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* ✅ 가로 2개씩 배치 */
+  gap: 20px; /* 카드 간격 */
+  margin-top: 20px;
+}
+
+.results-column {
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.results-column h2 {
+  margin-bottom: 20px;
+  font-size: 20px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.result-card {
+  background: #f8f8f8;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  text-align: center;
+}
