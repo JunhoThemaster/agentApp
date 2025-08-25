@@ -8,5 +8,5 @@ IRIS_2gb_sessions/
 CLVR_2gb_sessions/
 RPL_2gb_sessions/
 REAL_2gb_sessions/
-
+WEIRD_2gb_sessions/
 backend/app/.env

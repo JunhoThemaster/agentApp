@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 import os
-from app.api import search_controller,video_controller
+from app.api import search_controller,video_controller,stats_controller
 from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
 
@@ -16,10 +16,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-s
+
 # static 디렉토리 존재 확인 후 mount
 app.include_router(search_controller.router)
 app.include_router(video_controller.router)
+app.include_router(stats_controller.router)
 # 라우터 등록
 
 # API 엔드포인트 예시

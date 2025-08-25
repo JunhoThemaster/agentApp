@@ -20,6 +20,7 @@ def find_video_path(session_id: str, camera_id: str) -> str | None:
     """
     session_id와 camera_id를 기반으로 실제 mp4 경로를 찾는다.
     """
+    
     real_session_id = normalize_session_id(session_id)
     for p in BASE_DIR.rglob(f"{camera_id}.mp4"):
         if real_session_id in str(p):

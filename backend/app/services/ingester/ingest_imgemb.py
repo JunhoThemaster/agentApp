@@ -1,30 +1,25 @@
-# -*- coding: utf-8 -*-
-"""
-CSV 기반 SigLIP 텍스트+다중 대표 프레임(균등 샘플링) 멀티모달 임베딩 → Elasticsearch 인덱싱
-- video_service.py 의 find_video_path() 활용
-"""
 
+from typing import List, Dict, Any
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from app.es.client import get_client
+
 from elasticsearch import helpers
 from elasticsearch.exceptions import NotFoundError, RequestError
 from PIL import Image
 import cv2
+
+from app.es.client import get_client
 from app.services.env_loader import env_loader
 from ...models_emb.embedder_siglip import UnifiedEmbedder
-from app.services.video_service import find_video_path  # ✅ 이미 구현한 함수 import
+from app.services.video_service import find_video_path  
 
-
-BASE_DIR = env_loader.env_loader()
-
+# 설정
+BASE_DIR = env_loader.env_loader()  
 CSV_PATH = f"{BASE_DIR}/data/all_labs_merged.csv"
-
-
 INDEX_NAME = "embeddings_imgtxt"
 
-# ✅ SigLIP 모델 로드
+#  SigLIP 모델 로드
 siglip = UnifiedEmbedder(
     "google/siglip-so400m-patch14-384",
     device="cuda",
@@ -32,7 +27,8 @@ siglip = UnifiedEmbedder(
     normalize=True
 )
 
-def read_first_frame(video_path: str, target_w=384, target_h=384) -> Image.Image | None:
+# 프레임 로딩 유틸
+def read_first_frame(video_path: str, target_w: int = 384, target_h: int = 384) -> Image.Image | None:
     cap = cv2.VideoCapture(video_path)
     ok, frame = cap.read()
     cap.release()
@@ -47,8 +43,8 @@ def read_n_frames_evenly(
     target_w: int = 384,
     target_h: int = 384,
     strict: bool = False
-) -> list[Image.Image]:
-    imgs: list[Image.Image] = []
+) -> List[Image.Image]:
+    imgs: List[Image.Image] = []
     cap = cv2.VideoCapture(video_path)
     try:
         if not cap.isOpened():
@@ -71,11 +67,12 @@ def read_n_frames_evenly(
         return []
     return imgs
 
+# 임베딩 유틸
 def l2_normalize(vec: np.ndarray, eps: float = 1e-12) -> np.ndarray:
-    denom = max(np.linalg.norm(vec), eps)
+    denom = max(float(np.linalg.norm(vec)), eps)
     return vec / denom
 
-def embed_text_with_images_mean(embedder: UnifiedEmbedder, text: str, images: list[Image.Image]) -> np.ndarray:
+def embed_text_with_images_mean(embedder: UnifiedEmbedder, text: str, images: List[Image.Image]) -> np.ndarray:
     if not images:
         raise ValueError("images is empty")
     texts = [text] * len(images)
@@ -84,12 +81,14 @@ def embed_text_with_images_mean(embedder: UnifiedEmbedder, text: str, images: li
     mean_vec = embs.mean(axis=0)
     return l2_normalize(mean_vec)
 
-def create_index(es):
+# 인덱스 생성(없으면)
+def ensure_index(es) -> None:
     try:
-        es.indices.delete(index=INDEX_NAME)
-        print(f"[INFO] 기존 인덱스 {INDEX_NAME} 삭제 완료")
-    except NotFoundError:
-        print(f"[INFO] 기존 인덱스 {INDEX_NAME} 없음 → 새로 생성 예정")
+        if es.indices.exists(index=INDEX_NAME):
+            return
+    except Exception:
+        # 일부 ES 버전/권한에서 exists가 예외를 던질 수 있음 → 생성 시도
+        pass
 
     mapping = {
         "mappings": {
@@ -109,13 +108,16 @@ def create_index(es):
     }
     try:
         es.indices.create(index=INDEX_NAME, body=mapping)
-        print(f"[INFO] 새 인덱스 {INDEX_NAME} 생성 완료")
+        print(f"[INFO] created index {INDEX_NAME}")
     except RequestError as e:
-        print(f"[ERR] 인덱스 생성 실패: {e.info}")
+        # 이미 존재 등 경합 시 무시
+        if getattr(e, "info", {}).get("error", {}).get("type") != "resource_already_exists_exception":
+            print(f"[ERR] index create failed: {e.info}")
 
-def embed_and_ingest(n_keyframes: int = 10):
+# 인덱싱(있으면 스킵)
+def embed_and_ingest(n_keyframes: int = 10, skip_existing: bool = True) -> None:
     es = get_client()
-    create_index(es)
+    ensure_index(es)
 
     df = pd.read_csv(CSV_PATH)
     required_cols = {"session_id", "video_summary", "camera_id"}
@@ -129,6 +131,8 @@ def embed_and_ingest(n_keyframes: int = 10):
     )
 
     actions = []
+    op_type = "create" if skip_existing else "index"  # ✅ create → 존재 시 409로 스킵
+
     for _, row in df_unique.iterrows():
         session_id = str(row["session_id"])
         camera_id = str(row["camera_id"])
@@ -154,13 +158,13 @@ def embed_and_ingest(n_keyframes: int = 10):
         try:
             emb_fused_mean = embed_text_with_images_mean(siglip, text, images).tolist()
         except Exception as e:
-            print(f"[ERR] session={session_id} fail: {e}")
+            print(f"[ERR] session={session_id} embed fail: {e}")
             continue
 
         actions.append({
-            "_op_type": "index",
+            "_op_type": op_type,              # 없을 때만 생성
             "_index": INDEX_NAME,
-            "_id": session_id,   # session 단위 표현
+            "_id": session_id,                # 세션 단위 문서
             "_source": {
                 "session_id": session_id,
                 "camera_id": camera_id,
@@ -170,9 +174,31 @@ def embed_and_ingest(n_keyframes: int = 10):
             }
         })
 
-    if actions:
-        helpers.bulk(es, actions)
-    print(f"[OK] {len(actions)} sessions indexed into {INDEX_NAME}")
+    if not actions:
+        print("[INFO] no actions to index")
+        return
+
+    success, errors = helpers.bulk(
+        es,
+        actions,
+        raise_on_error=False,   # 409 등 에러 발생해도 계속
+        stats_only=False
+    )
+
+    # 409(conflict) 스킵 집계
+    skipped = 0
+    other_errors = 0
+    for e in errors:
+        if isinstance(e, dict):
+            rec = e.get("create") or e.get("index") or e.get("update") or {}
+            if rec.get("status") == 409:
+                skipped += 1
+            else:
+                other_errors += 1
+        else:
+            other_errors += 1
+
+    print(f"[OK] indexed: {success}, skipped(existing): {skipped}, errors: {other_errors}")
 
 if __name__ == "__main__":
-    embed_and_ingest(n_keyframes=10)
+    embed_and_ingest(n_keyframes=10, skip_existing=True)

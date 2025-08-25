@@ -31,7 +31,7 @@ async def search_text(q: str = Query(..., description="검색할 텍스트 쿼�
         session_id = r["session_id"]
         camera_id  = r["camera_id"]
         video_path = find_video_path(session_id, camera_id)
-
+        print(video_path)
         if video_path:  # 실제 영상이 있는 경우만
             video_url = f"http://localhost:8000/api/video/{session_id}/{camera_id}"
             enriched_results.append(SearchResponse(
@@ -43,6 +43,7 @@ async def search_text(q: str = Query(..., description="검색할 텍스트 쿼�
                 video_url=video_url
             ))
     print(enriched_results)
+    print(len(enriched_results))
     
     return enriched_results
 
