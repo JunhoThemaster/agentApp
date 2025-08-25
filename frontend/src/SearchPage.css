@@ -54,15 +54,19 @@
   padding: 20px;
   border-radius: 16px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+
+  display: grid; 
+  grid-template-columns: repeat(2, 1fr); /* ✅ 카드 2개씩 가로 */
+  gap: 20px; /* 카드 사이 간격 */
 }
 
 .results-column h2 {
+  grid-column: span 2; /* 제목은 두 칸 다 차지 */
   margin-bottom: 20px;
   font-size: 20px;
   font-weight: bold;
   text-align: center;
 }
-
 .result-card {
   background: #f8f8f8;
   padding: 16px;

@@ -1,34 +1,16 @@
-import React, { useState } from "react";
+import React from "react";
 import "../SearchPage.css";
-import { searchTextApi, videoStreamApi } from "../api";
+import { useSearchVideos } from "../hooks/useSearchVideos";
 
 const SearchPage: React.FC = () => {
-  const [query, setQuery] = useState("");
-  const [textResults, setTextResults] = useState<any[]>([]); // 검색 결과 저장
-
-  const handleSearch = async () => {
-    console.log("검색어:", query);
-
-    try {
-      // 1) 텍스트 검색 API 호출
-      const res = await fetch(searchTextApi(query));
-      if (!res.ok) throw new Error("검색 API 오류");
-      const data = await res.json();
-
-      // ✅ 결과에 videoUrl까지 넣어서 저장
-      if (data.results && data.results.length > 0) {
-        const enriched = data.results.map((item: any) => ({
-          ...item,
-          videoUrl: videoStreamApi(item.session_id, item.camera_id),
-        }));
-        setTextResults(enriched);
-      } else {
-        setTextResults([]);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  const {
+    query,
+    setQuery,
+    textResults,
+    imageResults,
+    videoRefs,
+    handleSearch,
+  } = useSearchVideos();
 
   return (
     <div className="search-container">
@@ -45,34 +27,45 @@ const SearchPage: React.FC = () => {
 
       {/* 검색 결과 */}
       <div className="results-grid">
+        {/* 텍스트 → 텍스트 결과 */}
         <div className="results-column">
           <h2>텍스트 → 텍스트 결과</h2>
-          {textResults.map((item, idx) => (
+          {textResults.slice(0, 5).map((result, idx) => (
             <div key={idx} className="result-card">
-              <p>{item.text}</p>
-
-              {/* ✅ 결과별 비디오 자동 재생 */}
-              {item.videoUrl && (
-                <video
-                  key={item.videoUrl} // 새 검색 시 강제 리렌더
-                  width="320"
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  controls
-                >
-                  <source src={item.videoUrl} type="video/mp4" />
-                  지원하지 않는 브라우저입니다.
-                </video>
-              )}
+              <p>
+                {result.session_id} - {result.camera_id}
+              </p>
+              <video
+                ref={(el) => {
+                  videoRefs.current[idx] = el;
+                }}
+                src={result.video_url}
+                controls
+                autoPlay
+                muted
+                width="320"
+              />
             </div>
           ))}
         </div>
 
+        {/* 텍스트 → 이미지 결과 */}
         <div className="results-column">
           <h2>텍스트 → 이미지 결과</h2>
-          <div className="result-card">이미지 결과 (추후 연결)</div>
+          {imageResults.slice(0, 5).map((result, idx) => (
+            <div key={idx} className="result-card">
+              <p>
+                {result.session_id} - {result.camera_id}
+              </p>
+              <video
+                src={result.video_url}
+                controls
+                autoPlay
+                muted
+                width="320"
+              />
+            </div>
+          ))}
         </div>
       </div>
     </div>
