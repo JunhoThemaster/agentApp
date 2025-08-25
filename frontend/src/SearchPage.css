@@ -74,3 +74,83 @@
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   text-align: center;
 }
+
+
+
+/* SearchPage.css */
+.card-actions { margin-top: 8px; }
+.card-actions button { padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; cursor: pointer; }
+.stats-box { margin-top: 10px; padding: 10px; border: 1px solid #eee; border-radius: 10px; background: #fafafa; }
+.stats-box.error { border-color: #f9c2c2; background: #fff5f5; color: #b10000; }
+.stats-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; }
+.stats-key { color: #555; }
+.stats-val { font-weight: 600; }
+
+
+/* 미니 차트 레이아웃 */
+.mini-grid {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 8px 12px;
+  align-items: center;
+}
+
+/* 링 차트 */
+.mini-ring {
+  position: relative;
+  border-radius: 50%;
+}
+.mini-ring-inner {
+  position: absolute;
+  inset: 6px;
+  background: #fff;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e5e7eb;
+}
+.mini-ring-text {
+  font-size: 12px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1;
+}
+.mini-caption {
+  font-size: 11px;
+  text-align: center;
+  margin-top: 4px;
+  color: #6b7280;
+}
+
+/* 미니 바 */
+.mini-bars {}
+.mini-title {
+  font-size: 12px;
+  color: #374151;
+  margin-bottom: 2px;
+}
+.mini-bar-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 6px;
+  align-items: center;
+  margin: 2px 0;
+}
+.mini-bar-label {
+  font-size: 11px; color: #6b7280; width: 42px;
+}
+.mini-bar-track {
+  height: 6px; background: #f3f4f6; border-radius: 999px; overflow: hidden;
+}
+.mini-bar-fill {
+  height: 100%;
+}
+.mini-bar-fill.a { background: #4f46e5; } /* indigo */
+.mini-bar-fill.b { background: #10b981; } /* emerald */
+.mini-bar-val {
+  font-size: 11px; color: #111827; min-width: 70px; text-align: right;
+}
+
+/* 미니 에러바 */
+.mini-errorbar { }
+.mini-meta { font-size: 11px; color: #6b7280; margin-top: 2px; }
