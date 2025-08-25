@@ -2,8 +2,13 @@ import pandas as pd
 from pathlib import Path
 from app.es.client import get_client
 from elasticsearch import helpers
+from app.services.env_loader import env_loader
 
-CSV_PATH = "/home/dickson/문서/agentApp/backend/app/data/all_labs_merged.csv"
+
+BASE_DIR = env_loader.env_loader()
+
+
+CSV_PATH = f"{BASE_DIR}/data/all_labs_merged.csv"
 
 INDEX_NAME = "sessions_stats"
 

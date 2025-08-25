@@ -12,7 +12,6 @@ from elasticsearch import helpers
 from elasticsearch.exceptions import NotFoundError, RequestError
 from PIL import Image
 import cv2
-
 from ...models_emb.embedder_siglip import UnifiedEmbedder
 from app.services.video_service import find_video_path  # ✅ 이미 구현한 함수 import
 

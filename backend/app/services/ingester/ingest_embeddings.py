@@ -2,8 +2,12 @@ import pandas as pd
 from app.es.client import get_client
 from elasticsearch import helpers
 from sentence_transformers import SentenceTransformer
+from app.services.env_loader import env_loader
 
-CSV_PATH = "/home/dickson/문서/agentApp/backend/app/data/all_labs_merged.csv"
+BASE_DIR = env_loader.env_loader()
+
+
+CSV_PATH = f"{BASE_DIR}/data/all_labs_merged.csv"
 INDEX_NAME = "embeddings_text"
 
 # ✅ 모델 로드

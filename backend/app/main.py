@@ -16,7 +16,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+s
 # static 디렉토리 존재 확인 후 mount
 app.include_router(search_controller.router)
 app.include_router(video_controller.router)
