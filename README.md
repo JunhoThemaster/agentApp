@@ -188,7 +188,7 @@
 - **OS**: Ubuntu 22.04 LTS  
 - **Language**: Python 3.10 / TypeScript (React)  
 - **Frameworks**: FastAPI, Node.js 18+  
-- **TextEMB/ImageEMB**: Distil
+- **TextEMB/ImageEMB**: Distil_multi + KoE5 (Text emb)  , sigrip ( Image + Text emb)
 - **Database / Storage**: Elasticsearch 8.x  
 - **Data Pipeline**: Logstash (ETL 기반 인제스천)  
 - **Version Control**: GitHub  
