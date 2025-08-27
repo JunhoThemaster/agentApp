@@ -99,70 +99,81 @@
        
        대부분 0.0으로 나타나 있어서 설명력이 거의 없음.
        👉 해석 불가 / 불필요한 요인일 가능성이 높음. (차라리 4요인 모델이 적합할 수도 있음)
-      - 최종 선정 컬럼:
-         📌 최종 선택 컬럼 리스트
+      
+      - 📌 최종 선택 컬럼 리스트
+      - **(action은 input신호라고 봐야하기때문에 observation에서 아래 컬럼의 쌍(pair)을 추가하거나 관측값과 실제 신호값의 차이를 추가해야 한다고 판단했습니다.)**
 
-           action/cartesian_position_col0
-           
-           action/cartesian_position_col1
-           
-           action/cartesian_position_col2
-           
-           action/cartesian_position_col3
-           
-           action/cartesian_position_col4
-           
-           action/cartesian_position_col5
-           
-           action/cartesian_velocity_col0
-           
-           action/cartesian_velocity_col1
-           
-           action/cartesian_velocity_col2
-           
-           action/cartesian_velocity_col3
-           
-           action/cartesian_velocity_col4
-           
-           action/cartesian_velocity_col5
-           
-           action/gripper_position
-           
-           action/gripper_velocity
-           
-           action/joint_position_col0
-           
-           action/joint_position_col1
-           
-           action/joint_position_col2
-           
-           action/joint_position_col3
-           
-           action/joint_position_col4
-           
-           action/joint_position_col5
+              action/cartesian_position_col0  _
+              
+              action/cartesian_position_col1
+              
+              action/cartesian_position_col2
+              
+              action/cartesian_position_col3
+              
+              action/cartesian_position_col4
+              
+              action/cartesian_position_col5
+              
+              action/cartesian_velocity_col0
+              
+              action/cartesian_velocity_col1
+              
+              action/cartesian_velocity_col2
+              
+              action/cartesian_velocity_col3
+              
+              action/cartesian_velocity_col4
+              
+              action/cartesian_velocity_col5
+              
+              action/gripper_position
+              
+              action/gripper_velocity
+              
+              action/joint_position_col0
+              
+              action/joint_position_col1
+              
+              action/joint_position_col2
+              
+              action/joint_position_col3
+              
+              action/joint_position_col4
+              
+              action/joint_position_col5
 
+ - **파생 컬럼 생성(선정된 컬럼이 실제 관측신호가 아닌 인풋 신호라고 판단했기에 진행했습니다)**
+ 
+   - 추후 모델 관점에서 혹은 통계 지표 제공을 위하여  **t-1시점과 t시점의 차이, 실제관측된 로봇의 센서 값 (Observation) 과 실제 액션 인풋의 차이**를 보여줄수 있는 파생 컬럼도 미리 생성했습니다
+             
+         📌 파생 컬럼 정리
+      
+         ① _**pos_error_norm**_ : 목표 위치(target)와 실제 로봇 위치(observation) 차이 벡터의 크기. → 로봇이 목표 지점과 얼마나 떨어져 있는지를 나타냄  
+      
+         ② _**vel_norm**_ : 로봇의 카테시안 속도 벡터 크기. → 로봇이 현재 얼마나 빠르게 움직이고 있는지 표현  
+                      
+         ③ _**pos_error_diff**_ : 프레임 간 `pos_error_norm`의 차이. → 오차가 줄어드는지(목표에 접근), 커지는지(멀어짐) 판단  
+                      
+         ④ _**pos_error_rate**_ : `pos_error_diff`를 현재 오차(`pos_error_norm`)로 정규화. → 목표 대비 오차 감소 속도를 상대적으로 측정  
+                      
+         ⑤ _**error_over_speed**_ : `pos_error_norm ÷ vel_norm`. → 오차 대비 속도를 정규화하여 **움직임 효율성**을 측정  
+                      
+         ⑥ _**gripper_sign_change**_ : 그리퍼 속도의 부호 변화 여부. → 열림↔닫힘 동작 전환 탐지  
+                      
+         ⑦ _**gripper_open_start**_ : 그리퍼 속도가 0 이하 → 양수로 전환된 시점. → **그리퍼 열기 시작 이벤트**  
+                      
+         ⑧ _**gripper_close_start**_ : 그리퍼 속도가 0 이상 → 음수로 전환된 시점. → **그리퍼 닫기 시작 이벤트**  
+                      
+         ⑨ _**vel_error**_ : 목표 카테시안 속도(action)와 실제 속도(observation)의 차이 벡터 크기. → 제어 입력 대비 실제 움직임의 불일치 정도  
+                      
+         ⑩ _**joint_error**_ : 목표 조인트 위치(action)와 실제 조인트 위치(observation)의 차이. → 로봇 관절 단위에서의 제어 오차  
+                      
+         ⑪ _**joint_error_norm**_ : 여러 조인트 오차(`joint_error`)를 벡터 크기로 합산. → 전체 로봇 관절 차원에서 목표와 실제의 불일치 정도  
+                      
+         ⑫ _**joint_error_rate**_ : 프레임 간 `joint_error_norm`의 변화율. → 조인트 레벨에서 목표값을 향해 수렴하는 속도  
+                
 
-           - 이 외로 동작 구분 해석에 도움을 주기위해 t-1시점과 t시점의 차이를 보여줄수 있는 파생 컬럼도 미리 생성했습니다
-             - **['pos_error_norm', 'pos_error_diff', 'pos_error_rate', 'vel_norm', 'error_over_speed', 'gripper_sign_change', 'gripper_open_start', 'gripper_close_start']**
-             - 
-               📌 파생 컬럼 정리
-
-                ① _**pos_error_norm**_ : 목표 위치(target)와 실제 로봇 위치(observation) 차이 벡터의 크기. → 로봇이 목표 지점과 얼마나 떨어져 있는지를 나타냄  
-                
-                ② _**vel_norm**_ : 로봇의 카테시안 속도 벡터 크기. → 로봇이 현재 얼마나 빠르게 움직이고 있는지 표현  
-                
-                ③ _**pos_error_diff**_ : 프레임 간 `pos_error_norm`의 차이. → 오차가 줄어드는지(목표에 접근), 커지는지(멀어짐) 판단  
-                
-                ④ _**pos_error_rate**_ : `pos_error_diff`를 현재 오차(`pos_error_norm`)로 정규화. → 목표 대비 오차 감소 속도를 상대적으로 측정  
-                
-                ⑤ _**error_over_speed**_ : `pos_error_norm ÷ vel_norm`. → 오차 대비 속도를 정규화하여 **움직임 효율성**을 측정  
-                
-                ⑥ _**gripper_sign_change**_ : 그리퍼 속도의 부호 변화 여부. → 열림↔닫힘 동작 전환 탐지  
-                
-                ⑦ _**gripper_open_start**_ : 그리퍼 속도가 0 이하 → 양수로 전환된 시점. → **그리퍼 열기 시작 이벤트**  
-                
-                ⑧ _**gripper_close_start**_ : 그리퍼 속도가 0 이상 → 음수로 전환된 시점. → **그리퍼 닫기 시작 이벤트**  
 
                
 - **라벨 생성 (`desc_major`)**
