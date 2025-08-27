@@ -35,27 +35,145 @@
   - 연구소 별로 샘플을 뽑아본 결과 각기 다른 컬럼의 수, 품질의 차이 (최소 프레임,센서데이터 nan값 유무,메타데이터 설명 부실 등)의 문제를 해결하기위해
     연구소의 선정도 필요했고, **고정된 스키마**가 요구 되었습니다.
   - 동작 라벨(ground truth)이 명확하지 않아, **행동 단위 라벨을 생성**할 필요가 있다고 판단했습니다.
-
+- **변동량이 거의 없는 변수 제거**
+  - 표준편차 비율, 변화율이 매우적은 컬럼 제거, 변동 범위가 매우 적은 컬럼 제거
+    
 - **요인분석 (Factor Analysis) 수행**
-  - 센서 데이터의 고차원 변수를 줄이고 행동을 설명하는 잠재 요인을 찾고 고정된 스키마를 수립하기위해 요인분석을 실시했습니다.  
+  - 센서 데이터의 고차원 변수를 줄이고 행동을 설명하는 잠재 요인을 찾고 고정된 스키마를 수립하기위해 요인분석을 실시했습니다.
+  - 요인 분석 이전에 공선성을 검증하여 강한 상관관계를 가지는 컬럼을 제거했습니다. 하지만 observation과 action은 당연하게도 상관을 강하게 가지고 action에서도 x,y,z 축은 종속성을 가질수 있는
+    변수이기 때문에 필터링하여 제거했습니다.
+    
   - Bartlett 구형성 검정 및 KMO 측도를 사용하여 요인분석 적합성을 검증  
     ![요인분석 적합성 테스트 결과](https://github.com/user-attachments/assets/74c0decc-675d-4c53-a1cc-be650e4ab947)
 
   - Bartlett 검정: 유의확률 p < 0.001 → 변수들 간 상관관계가 유의미함  
   - KMO overall = 0.632 → **요인분석이 가능하지만 다소 경계선 수준**
-  - - → 변수 간 상관성이 매우 강하여 공분산 행렬이 수치적으로 불안정하게 계산되었습니다. 
-  - 하지만 p-value가 유의하므로, 요인분석 자체는 적용 가능하다고 판단  
-  - 이 결과를 기반으로, 센서 데이터에서 주요 행동 요인을 도출하고
-    공선성이 강한 변수들을 제거하는 절차를 진행했습니다.
- 
+     → 변수 간 상관성이 매우 강하여 공분산 행렬이 수치적으로 불안정하게 계산되었습니다. 
+     하지만 p-value가 유의하므로, 요인분석 자체는 적용 가능하다고 판단  
+  
+  -  다음으로 요인의 갯수 선정을 위해 eigen-value + Scree Plot으로 시각화 를 해보았습니다.
+    ![스크리플롯](https://github.com/user-attachments/assets/c87b379c-7de9-49d6-9bb8-3b0e33809957)
+    - 약 **10 ~ 20개의 요인수가 나오는걸 확인했습니다. 실제 300개 이상의 feature에서 10-20개의 요인만으로 상관구조를 다 설명가능하다 라고 결론 내렸습니다.
+      
+  - **요인 적재치**
+    
+    ![요인적재치](https://github.com/user-attachments/assets/ec85ebbc-2579-4ac6-aefd-5926e9b3ae7a)
+    - 📌 요인별 해석
+       - Factor1: Cartesian Position / Joint Position 요인 (위치·자세 요인)
+       
+              action/cartesian_position_col0,1,3,4,5
+              
+              action/joint_position_col0~5
+              
+              action/gripper_position
+              👉 로봇의 위치 좌표, 관절 각도, 그리퍼 위치 같은 정적인 자세 상태를 설명하는 요인.
+       
+       - Factor2: Cartesian Velocity 요인 (속도 요인 1 – 특정 축)
+       
+             action/cartesian_velocity_col3 (0.768)
+             👉 로봇의 3번 축 방향 속도에 특화된 요인.
+             (속도 관련 다른 변수도 일부 영향을 받지만, 주로 col3이 대표적)
+             
+             Factor3: Cartesian Position Col2 / Joint Position Col1 요인 (위치 요인 보조)
+             
+             action/cartesian_position_col2 (-0.831)
+             
+             action/joint_position_col1 (0.901)
+             👉 주로 **특정 관절/축(col2, col1)**의 위치 변화를 설명하는 보조 요인.
+       
+       - Factor4: Cartesian Velocity 요인 (속도 요인 2 – 다축)
+       
+             action/cartesian_velocity_col0 (0.655)
+             
+             action/cartesian_velocity_col1 (0.385)
+             
+             action/cartesian_velocity_col2 (-0.646)
+             
+             action/cartesian_velocity_col4 (0.509)
+             
+             action/cartesian_velocity_col5 (0.373)
+             👉 여러 축의 속도 성분을 동시에 설명하는 요인.
+             즉, 로봇 팔이 움직이는 동적 패턴을 반영.
+       
+       Factor5: 기여도 낮음
+       
+       대부분 0.0으로 나타나 있어서 설명력이 거의 없음.
+       👉 해석 불가 / 불필요한 요인일 가능성이 높음. (차라리 4요인 모델이 적합할 수도 있음)
+      - 최종 선정 컬럼:
+         📌 최종 선택 컬럼 리스트
 
+           action/cartesian_position_col0
+           
+           action/cartesian_position_col1
+           
+           action/cartesian_position_col2
+           
+           action/cartesian_position_col3
+           
+           action/cartesian_position_col4
+           
+           action/cartesian_position_col5
+           
+           action/cartesian_velocity_col0
+           
+           action/cartesian_velocity_col1
+           
+           action/cartesian_velocity_col2
+           
+           action/cartesian_velocity_col3
+           
+           action/cartesian_velocity_col4
+           
+           action/cartesian_velocity_col5
+           
+           action/gripper_position
+           
+           action/gripper_velocity
+           
+           action/joint_position_col0
+           
+           action/joint_position_col1
+           
+           action/joint_position_col2
+           
+           action/joint_position_col3
+           
+           action/joint_position_col4
+           
+           action/joint_position_col5
+
+
+           - 이 외로 동작 구분 해석에 도움을 주기위해 t-1시점과 t시점의 차이를 보여줄수 있는 파생 컬럼도 미리 생성했습니다
+             - **['pos_error_norm', 'pos_error_diff', 'pos_error_rate', 'vel_norm', 'error_over_speed', 'gripper_sign_change', 'gripper_open_start', 'gripper_close_start']**
+             - 
+               📌 파생 컬럼 정리
+
+                ① _**pos_error_norm**_ : 목표 위치(target)와 실제 로봇 위치(observation) 차이 벡터의 크기. → 로봇이 목표 지점과 얼마나 떨어져 있는지를 나타냄  
+                
+                ② _**vel_norm**_ : 로봇의 카테시안 속도 벡터 크기. → 로봇이 현재 얼마나 빠르게 움직이고 있는지 표현  
+                
+                ③ _**pos_error_diff**_ : 프레임 간 `pos_error_norm`의 차이. → 오차가 줄어드는지(목표에 접근), 커지는지(멀어짐) 판단  
+                
+                ④ _**pos_error_rate**_ : `pos_error_diff`를 현재 오차(`pos_error_norm`)로 정규화. → 목표 대비 오차 감소 속도를 상대적으로 측정  
+                
+                ⑤ _**error_over_speed**_ : `pos_error_norm ÷ vel_norm`. → 오차 대비 속도를 정규화하여 **움직임 효율성**을 측정  
+                
+                ⑥ _**gripper_sign_change**_ : 그리퍼 속도의 부호 변화 여부. → 열림↔닫힘 동작 전환 탐지  
+                
+                ⑦ _**gripper_open_start**_ : 그리퍼 속도가 0 이하 → 양수로 전환된 시점. → **그리퍼 열기 시작 이벤트**  
+                
+                ⑧ _**gripper_close_start**_ : 그리퍼 속도가 0 이상 → 음수로 전환된 시점. → **그리퍼 닫기 시작 이벤트**  
+
+               
 - **라벨 생성 (`desc_major`)**
   - 요인분석 및 센서 패턴 분석을 종합하여 직접 라벨링을 수행하기 위한 **라벨링 툴**을 제작했습니다.
      - ![수동 라벨러](https://github.com/user-attachments/assets/b95b4f61-ce1c-4760-8c27-8bd6abe7162f)
 
 
   - `"대기"`, `"파지"`, `"운반"`, `"내려놓기"`, `"정렬"`, `"이탈"`, `"완료"` 등 주요 행동 단위로 구분  
-  - → 최종적으로 데이터셋에 **`desc_major` 컬럼**을 생성  
+  - → 최종적으로 데이터셋에 **`desc_major` 컬럼**을 생성
+     - ![최종 생성된 라벨](https://github.com/user-attachments/assets/e5f7fcb4-23d5-45bb-94a4-bffbfdec58bf)
+
 
 - **시각화 검증**
   -  라벨링한 결과를 토대로 Cartesian Position/Velocity 그래프에 `desc_major` 경계를 표시하여 비교  
