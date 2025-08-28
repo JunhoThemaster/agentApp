@@ -59,7 +59,7 @@
     
     ![요인적재치](https://github.com/user-attachments/assets/ec85ebbc-2579-4ac6-aefd-5926e9b3ae7a)
     - 📌 요인별 해석
-       - Factor1: Cartesian Position / Joint Position 요인 (위치·자세 요인)
+       - **Factor1**: Cartesian Position / Joint Position 요인 (위치·자세 요인)
        
               action/cartesian_position_col0,1,3,4,5
               
@@ -68,7 +68,7 @@
               action/gripper_position
               👉 로봇의 위치 좌표, 관절 각도, 그리퍼 위치 같은 정적인 자세 상태를 설명하는 요인.
        
-       - Factor2: Cartesian Velocity 요인 (속도 요인 1 – 특정 축)
+       - **Factor2**: Cartesian Velocity 요인 (속도 요인 1 – 특정 축)
        
              action/cartesian_velocity_col3 (0.768)
              👉 로봇의 3번 축 방향 속도에 특화된 요인.
@@ -81,7 +81,7 @@
              action/joint_position_col1 (0.901)
              👉 주로 **특정 관절/축(col2, col1)**의 위치 변화를 설명하는 보조 요인.
        
-       - Factor4: Cartesian Velocity 요인 (속도 요인 2 – 다축)
+       - **Factor4**: Cartesian Velocity 요인 (속도 요인 2 – 다축)
        
              action/cartesian_velocity_col0 (0.655)
              
@@ -95,7 +95,7 @@
              👉 여러 축의 속도 성분을 동시에 설명하는 요인.
              즉, 로봇 팔이 움직이는 동적 패턴을 반영.
        
-       Factor5: 기여도 낮음
+      - **Factor5**: 기여도 낮음
        
        대부분 0.0으로 나타나 있어서 설명력이 거의 없음.
        👉 해석 불가 / 불필요한 요인일 가능성이 높음. (차라리 4요인 모델이 적합할 수도 있음)
