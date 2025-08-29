@@ -15,10 +15,10 @@
 
 ### 🚀 핵심 기술적 혁신
 1. **하이브리드 임베딩 전략**: 속도(Recall)와 정확도(Precision)를 동시에 만족
-2. **멀티모달 융합**: 텍스트-영상-센서 데이터의 통합 검색
-3. **도메인 특화 특성 공학**: 로봇 물리학 기반 파생 변수 생성
+2. **멀티모달 융합**: 텍스트-영상 데이터의 통합 검색
+3. **도메인 특화 특성 공학**: 로봇 센서 기반 파생 변수 생성
 
-### 📊 성과 지표
+### 📊 기대 지표
 - **탐색 시간**: 수일 → **2분 이내**
 - **검색 정확도**: R@5에서 **85% 이상**
 - **처리 용량**: 시간당 **1,000개 센서 로그** 자동 분석
@@ -250,16 +250,7 @@ DROID 데이터셋을 처음 분석했을 때 마주한 현실:
 ```
 
 **핵심 기대**: 단순 분류 성능보다는 **"어떤 센서가 행동 구분에 중요한가?"**를 파악하여 향후 검색 시스템 설계에 활용
-```python
-# 센서 시퀀스를 구간별로 집계
-features = {
-    'pos_mean': sequence['cartesian_position'].mean(),
-    'pos_std': sequence['cartesian_position'].std(),
-    'vel_max': sequence['cartesian_velocity'].max(),
-    # ... 기타 통계량들
-}
-# XGBoost로 desc_major 라벨 예측
-```
+
 
 #### 결과와 한계
 - **장점**: Feature Importance로 중요 변수 식별 가능
@@ -508,7 +499,7 @@ XGBoost → LSTM → VideoMAE → Gemma3 (리소스 한계)
 - **특징**: 한국어 검색 전용으로 설계됨
 - **장점**: 비관련 문장을 확실히 구분 (0.052)
 - **단점**: 유사 문장 점수도 낮음 (0.536)
-- **용도**: 정밀한 검색(Precision) 단계에 적합
+- **용도**: 정밀한 검색 2차 정밀 검색(Precision) 단계에 적합
 
 **distiluse-multilingual**:
 - **특징**: 다국어 지원 + 빠른 처리 속도
@@ -551,18 +542,6 @@ XGBoost → LSTM → VideoMAE → Gemma3 (리소스 한계)
    SigLIP이 더 안정적인 평균 임베딩 생성
 ```
 
-#### 하이브리드 검색의 시너지 효과
-```
-Text-to-Text + Text-to-Image 조합:
-- Text-to-Text: 의미적, 개념적 유사성 포착
-- Text-to-Image: 시각적, 상황적 유사성 포착
-
-예시:
-쿼리: "로봇이 실수로 물체를 떨어뜨림"
-→ Text-to-Text: "떨어뜨림", "실수", "물체" 키워드 매칭
-→ Text-to-Image: 물체가 떨어지는 시각적 패턴 매칭
-→ 두 결과의 교집합: 가장 정확한 검색 결과
-```
 
 **실험 설계**: 로봇 영상 프레임과 한국어 설명 텍스트 간 매칭 성능 측정
 
@@ -580,19 +559,6 @@ Text-to-Text + Text-to-Image 조합:
 - **성능**: 한국어 검색에서 최고 성능
 - **안정성**: 멀티프레임 확장 시에도 일관된 결과
 - **확장성**: 코사인 유사도 공간에서 안정적 동작
-
-### ✅ 하이브리드 검색 전략
-
-**2단계 검색 파이프라인**:
-
-1. **1차 검색 (Recall)**: `distiluse-multilingual`
-   - 빠른 속도로 대용량 데이터에서 후보군 추출
-   - 다국어 지원으로 한국어+영어 혼재 데이터 처리
-
-2. **2차 검색 (Precision)**: `KoE5` + `SigLIP`
-   - 한국어 텍스트 정밀 매칭
-   - 영상-텍스트 크로스모달 검색
-   - 최종 Top-K 결과 선별
 
 ---
 
@@ -637,9 +603,8 @@ flowchart TD
 기술 선택 근거:
     
     1. Logstash (ETL):
-       ✅ 다양한 데이터 소스 통합 (CSV, 이미지, 비디오)
-       ✅ 실시간 처리 및 변환
-       ✅ 오류 처리 및 재시도 메커니즘
+       ✅ 다양한 데이터 소스 감시 (CSV, 이미지, 비디오) 및 트리거 발동 
+       ✅ 추후 데이터의 추가시에 자동으로 적재, 관리자가 직접 추가해야하는 번거로움 감소
        
        vs 대안들:
        - Apache Kafka: 스트리밍 특화, 복잡한 설정
@@ -670,7 +635,6 @@ flowchart TD
 #### 프론트엔드  
 - **Framework**: React + TypeScript
 - **Build Tool**: Node.js 18+
-- **UI Library**: Tailwind CSS
 
 #### 데이터 저장
 - **인덱스**: Elasticsearch (벡터 검색 지원)
@@ -728,24 +692,7 @@ flowchart TD
    - 수동 탐색 시간: 몇 시간~며칠 → 자동 검색: 몇 초~몇 분
    - 하드웨어/소프트웨어 문제 구분을 위한 센서 통계 제공
 
-### 🚀 기술적 혁신 포인트
 
-#### 1. **하이브리드 임베딩 전략**
-기존의 단일 모델 접근법과 달리, 각 단계별 최적화된 모델 조합:
-```
-1차 검색 (Recall) → distiluse-multilingual (빠른 속도)
-2차 검색 (Precision) → KoE5 + SigLIP (높은 정확도)
-```
-
-#### 2. **도메인 특화 특성 공학**
-로봇 센서 데이터의 특성을 반영한 파생 변수 생성:
-```python
-# 예시: 핵심 파생 변수들
-pos_error_norm = ||target_pos - actual_pos||
-error_over_speed = pos_error_norm / velocity_norm  
-gripper_open_start = detect_gripper_state_change()
-joint_error_rate = d(joint_error_norm)/dt
-```
 
 #### 3. **End-to-End 검색 파이프라인**
 데이터 수집 → 전처리 → 임베딩 → 인덱싱 → 검색 → 시각화까지 완전 자동화
