@@ -594,7 +594,7 @@ flowchart TD
 ### 🔄 데이터 파이프라인 설계 근거
 
 #### 왜 Logstash + Elasticsearch 조합인가?
-```
+
 데이터 특성:
 - 대용량: 영상 + 센서 로그 (GB 단위)
 - 다양성: 텍스트 + 이미지 + 수치형 데이터
@@ -732,7 +732,7 @@ fine_tuned_model = LoRATrainer(
     domain_data="robot_video_captions",
     language="ko"  # 한국어 성능 강화
 )
-```
+
 
 **기대 효과**:
 - 영상 → 자연어 캡션 생성 품질 향상
